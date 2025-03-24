@@ -12,7 +12,7 @@ COPY --chown=node:node package*.json ./
 USER node
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy app source as non-root user
 COPY --chown=node:node . .

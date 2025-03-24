@@ -1,69 +1,98 @@
-# Welcome to your Lovable project
 
-## Project info
+# User Management System
 
-**URL**: https://lovable.dev/projects/809b4f55-c119-4daf-ac6b-8264e3b0508f
+A complete user management system with authentication, authorization, and user profile management.
 
-## How can I edit this code?
+## Project Overview
 
-There are several ways of editing your application.
+This project creates a complete user management system with the following components:
 
-**Use Lovable**
+- **Backend**: Node.js and Express.js REST API with JWT authentication
+- **Database**: MongoDB for user data storage
+- **Proxy**: Nginx as a reverse proxy
+- **Deployment**: Docker containers orchestrated with Docker Compose
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/809b4f55-c119-4daf-ac6b-8264e3b0508f) and start prompting.
+## Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- User registration and authentication
+- JWT-based secure authentication
+- Protected routes for authenticated users
+- User profile management
+- Admin-only routes for user management
 
-**Use your preferred IDE**
+## Project Structure
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+user-management-system/
+├── backend/               # Node.js + Express backend
+│   ├── config/            # Configuration files (database, etc.)
+│   ├── controllers/       # Route controllers
+│   ├── middleware/        # Custom middleware
+│   ├── models/            # Mongoose models
+│   ├── routes/            # API routes
+│   ├── Dockerfile         # Backend container configuration
+│   ├── package.json       # Node.js dependencies
+│   └── server.js          # Entry point
+├── nginx/                 # Nginx configuration
+│   └── default.conf       # Nginx routing configuration
+├── .gitlab-ci.yml         # GitLab CI/CD configuration
+└── docker-compose.yml     # Docker container orchestration
 ```
 
-**Edit a file directly in GitHub**
+## Setup Instructions
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Prerequisites
 
-**Use GitHub Codespaces**
+- Docker and Docker Compose installed
+- Git (optional, for version control)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Installation
 
-## What technologies are used for this project?
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd user-management-system
+   ```
 
-This project is built with .
+2. Start the containers:
+   ```
+   docker-compose up -d
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+3. The API will be available at:
+   ```
+   https://okdanish.duckdns.org
+   ```
 
-## How can I deploy this project?
+## API Endpoints
 
-Simply open [Lovable](https://lovable.dev/projects/809b4f55-c119-4daf-ac6b-8264e3b0508f) and click on Share -> Publish.
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| POST | /api/users/register | Register a new user | Public |
+| POST | /api/users/login | Authenticate user & get token | Public |
+| GET | /api/users/profile | Get user profile | Private |
+| PUT | /api/users/update | Update user profile | Private |
+| DELETE | /api/users/delete | Delete user | Admin |
 
-## I want to use a custom domain - is that possible?
+## Deployment
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+This project is designed to be deployed on AWS EC2 with DuckDNS for domain management.
+
+### Setting up DuckDNS
+
+1. Create a DuckDNS account and register `okdanish.duckdns.org`
+2. Update your DuckDNS domain to point to your EC2 instance's IP address
+
+### Deploying on EC2
+
+1. Launch an EC2 instance and install Docker + Docker Compose
+2. Clone this repository to your EC2 instance
+3. Run `docker-compose up -d` to start all services
+4. Your system is now available at `https://okdanish.duckdns.org`
+
+## Security Considerations
+
+- All passwords are hashed using bcrypt
+- JWT tokens are used for authentication
+- Protected routes use middleware for authorization
+- Environment variables are used for sensitive information

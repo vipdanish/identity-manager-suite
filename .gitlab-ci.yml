@@ -8,17 +8,26 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   CONTAINER_IMAGE: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}
+  CONTAINER_IMAGE_LATEST: ${CI_REGISTRY_IMAGE}:latest
 
 services:
   - docker:dind
 
+# Cache dependencies between builds
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - backend/node_modules/
+
 build:
   stage: build
   image: docker:latest
-  script:
+  before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $CONTAINER_IMAGE ./backend
+  script:
+    - docker build -t $CONTAINER_IMAGE -t $CONTAINER_IMAGE_LATEST ./backend
     - docker push $CONTAINER_IMAGE
+    - docker push $CONTAINER_IMAGE_LATEST
   only:
     - main
 
@@ -27,25 +36,60 @@ test:
   image: node:16-alpine
   script:
     - cd backend
-    - npm install
+    - npm ci
     # Add tests here once you have them
     - echo "Tests will go here"
+    # - npm test
+  only:
+    - main
+
+security_scan:
+  stage: test
+  image: docker:stable
+  variables:
+    DOCKER_DRIVER: overlay2
+  allow_failure: true
+  script:
+    - docker run --rm -v $(pwd):/app owasp/dependency-check --project "User Management System" --scan /app/backend --format "HTML" --out /app/reports
+  artifacts:
+    paths:
+      - reports/
   only:
     - main
 
 deploy:
   stage: deploy
   image: docker:latest
-  script:
-    - apk add --no-cache openssh-client
+  before_script:
+    - apk add --no-cache openssh-client curl
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+  script:
     - ssh $SERVER_USER@$SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh $SERVER_USER@$SERVER_IP "cd /home/$SERVER_USER/user-management-system && docker-compose pull && docker-compose up -d"
+    # Simple health check to verify deployment
+    - sleep 10
+    - ssh $SERVER_USER@$SERVER_IP "curl -s --head --request GET http://localhost:5000 | grep '200'"
   environment:
     name: production
     url: https://okdanish.duckdns.org
   only:
     - main
+
+# Automatic backup of MongoDB data
+backup:
+  stage: deploy
+  image: docker:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+  script:
+    - ssh $SERVER_USER@$SERVER_IP "cd /home/$SERVER_USER/user-management-system && ./backup.sh"
+  only:
+    - schedules
+  when: on_success
